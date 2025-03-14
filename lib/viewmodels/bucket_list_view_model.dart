@@ -411,9 +411,9 @@ class BucketListViewModel extends BaseViewModel {
     _searchActive = searchQuery.isNotEmpty;
     _tagFiltersActive = tags.isNotEmpty;
 
-    // When no filters are active, don't set _filteredItems to empty
-    // This works with the items getter which will return _allItems
+    // When no filters are active, clear _filteredItems and return all items
     if (!_searchActive && !_tagFiltersActive) {
+      _filteredItems = []; // Set to empty so the getter returns _allItems
       notifyListeners();
       return;
     }
@@ -431,9 +431,7 @@ class BucketListViewModel extends BaseViewModel {
           // Tag filter
           bool matchesTags =
               !_tagFiltersActive ||
-              _currentTagFilters.any(
-                (tag) => item.tags?.contains(tag) ?? false,
-              );
+              _currentTagFilters.any((tag) => item.tags.contains(tag));
 
           return matchesSearch && matchesTags;
         }).toList();
@@ -448,7 +446,7 @@ class BucketListViewModel extends BaseViewModel {
     _currentTagFilters = [];
     _searchActive = false;
     _tagFiltersActive = false;
-    _filteredItems = [];
+    _filteredItems = []; // Set to empty so the items getter returns _allItems
 
     // Notify listeners to update UI
     notifyListeners();
