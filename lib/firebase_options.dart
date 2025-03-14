@@ -47,28 +47,14 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDWt4OZFmMiUBlvpUEneTNmrwzHwsbx5TY',
-    appId: '1:173836080840:android:26822f7b54e4f4853237fd',
-    messagingSenderId: '173836080840',
-    projectId: 'bucketlist-dreams',
-    storageBucket: 'bucketlist-dreams.firebasestorage.app',
+
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDwGXgzWsaymh9fmLTYBR1LzkVxaIpZ564',
-    appId: '1:173836080840:ios:ae3003fd2070fcae3237fd',
-    messagingSenderId: '173836080840',
-    projectId: 'bucketlist-dreams',
-    storageBucket: 'bucketlist-dreams.firebasestorage.app',
-    iosBundleId: 'com.example.bucketlist',
+
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDwGXgzWsaymh9fmLTYBR1LzkVxaIpZ564',
-    appId: '1:173836080840:ios:ae3003fd2070fcae3237fd',
-    messagingSenderId: '173836080840',
-    projectId: 'bucketlist-dreams',
-    storageBucket: 'bucketlist-dreams.firebasestorage.app',
-    iosBundleId: 'com.example.bucketlist',
+
   );
 }
