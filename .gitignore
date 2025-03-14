@@ -100,7 +100,6 @@ app.*.symbols
 # Firebase config files
 google-services.json
 GoogleService-Info.plist
-firebase_options.dart
 
 # Local configuration
 .env

@@ -10,6 +10,7 @@ import 'package:bucketlist/services/local_storage_service.dart';
 import 'package:bucketlist/services/sync_service.dart';
 import 'package:bucketlist/viewmodels/auth_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -40,6 +41,9 @@ class ThemeProvider with ChangeNotifier {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
 
   // Initialize SharedPreferences first
   final prefs = await SharedPreferences.getInstance();
