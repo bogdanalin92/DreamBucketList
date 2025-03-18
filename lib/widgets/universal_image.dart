@@ -89,14 +89,24 @@ class UniversalImage extends StatelessWidget {
         }
 
         if (snapshot.hasData && snapshot.data == true) {
+          // Calculate safe cache dimensions that are not Infinity or NaN
+          int? safeCacheWidth =
+              (width != null && width!.isFinite)
+                  ? width!.toInt()
+                  : memoryCacheWidth;
+          int? safeCacheHeight =
+              (height != null && height!.isFinite)
+                  ? height!.toInt()
+                  : memoryCacheHeight;
+
           return Image.file(
             File(imagePath),
             fit: fit,
             width: width,
             height: height,
             scale: scale,
-            cacheWidth: width?.toInt() ?? memoryCacheWidth,
-            cacheHeight: height?.toInt() ?? memoryCacheHeight,
+            cacheWidth: safeCacheWidth,
+            cacheHeight: safeCacheHeight,
             errorBuilder: (context, error, stackTrace) {
               return errorWidget ?? const Icon(Icons.error);
             },

@@ -1,5 +1,8 @@
 import 'package:bucketlist/constants/tag_constants.dart';
 import 'package:bucketlist/widgets/cached_icon.dart';
+import 'package:bucketlist/widgets/circular_loader.dart';
+import 'package:bucketlist/widgets/loader_demo.dart';
+import 'package:bucketlist/widgets/loading_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
@@ -436,32 +439,36 @@ class MainscreenState extends State<Mainscreen>
     return GestureDetector(
       // Hide keyboard when tapping outside of any input field
       onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        body: _getPage(currentIndex), // Get the appropriate page
-        bottomNavigationBar: SalomonBottomBar(
-          currentIndex: currentIndex,
-          onTap: (position) {
-            // Hide keyboard when switching tabs
-            FocusScope.of(context).unfocus();
-            setState(() => currentIndex = position);
-          },
-          items: [
-            SalomonBottomBarItem(
-              icon: const Icon(Icons.list_alt),
-              title: const Text("Dreams"),
-              selectedColor: Theme.of(context).colorScheme.primary,
-            ),
-            SalomonBottomBarItem(
-              icon: const Icon(Icons.add_circle),
-              title: const Text("Add Dream"),
-              selectedColor: Theme.of(context).colorScheme.primary,
-            ),
-            SalomonBottomBarItem(
-              icon: const Icon(Icons.person),
-              title: const Text("Profile"),
-              selectedColor: Theme.of(context).colorScheme.primary,
-            ),
-          ],
+      child: LoadingOverlay(
+        isLoading: context.watch<BucketListViewModel>().isLoading,
+        message: 'Loading your dreams...',
+        child: Scaffold(
+          body: _getPage(currentIndex), // Get the appropriate page
+          bottomNavigationBar: SalomonBottomBar(
+            currentIndex: currentIndex,
+            onTap: (position) {
+              // Hide keyboard when switching tabs
+              FocusScope.of(context).unfocus();
+              setState(() => currentIndex = position);
+            },
+            items: [
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.list_alt),
+                title: const Text("Dreams"),
+                selectedColor: Theme.of(context).colorScheme.primary,
+              ),
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.add_circle),
+                title: const Text("Add Dream"),
+                selectedColor: Theme.of(context).colorScheme.primary,
+              ),
+              SalomonBottomBarItem(
+                icon: const Icon(Icons.person),
+                title: const Text("Profile"),
+                selectedColor: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
         ),
       ),
     );
