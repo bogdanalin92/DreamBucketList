@@ -54,6 +54,9 @@ void main() async {
   // Create the Firebase services factory
   final servicesFactory = FirebaseServicesFactory();
 
+  // Initialize Firebase App Check
+  await servicesFactory.appCheckService.initialize();
+
   // Initialize local storage service and wait for it to be ready
   final localStorageService = await LocalStorageService.create();
   await localStorageService.initialize();
