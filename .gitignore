@@ -36,7 +36,6 @@ migrate_working_dir/
 **/generated_plugin_registrant.dart
 
 # Web related
-lib/generated_plugin_registrant.dart
 
 # Symbolication related
 app.*.symbols
@@ -116,3 +115,4 @@ GoogleService-Info.plist
 *.bak
 
 .fake
+RELEASE_NOTES_v1.0.0.md

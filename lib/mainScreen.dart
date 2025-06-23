@@ -61,12 +61,14 @@ class MainscreenState extends State<Mainscreen>
   }
 
   Widget _getPage(int index) {
+    // Don't cache the home page (index 0) so it rebuilds with theme changes
+    if (index == 0) {
+      return _buildHomeContent();
+    }
+
     if (_cachedPages[index] is Container) {
       Widget page;
       switch (index) {
-        case 0:
-          page = _buildHomeContent();
-          break;
         case 1:
           page = const AddBucketListScreen();
           break;
@@ -88,6 +90,7 @@ class MainscreenState extends State<Mainscreen>
     return Stack(
       children: [
         Container(
+          key: ValueKey(brightness), // Force rebuild when brightness changes
           decoration: BoxDecoration(
             borderRadius: containerBorderRadius,
             gradient: LinearGradient(
@@ -95,8 +98,14 @@ class MainscreenState extends State<Mainscreen>
               end: Alignment.bottomRight,
               colors:
                   brightness == Brightness.dark
-                      ? [theme.colorScheme.surface, theme.colorScheme.surface]
-                      : [Colors.blue.shade50, Colors.white],
+                      ? [
+                        theme.colorScheme.surfaceContainer,
+                        theme.colorScheme.surface,
+                      ]
+                      : [
+                        theme.colorScheme.surfaceContainer,
+                        theme.colorScheme.surface,
+                      ],
             ),
           ),
         ),
