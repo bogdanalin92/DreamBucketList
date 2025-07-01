@@ -1,5 +1,6 @@
 import 'package:bucketlist/providers/auth_provider.dart';
 import 'package:bucketlist/widgets/cached_icon.dart';
+import 'package:bucketlist/widgets/custom_text_form_field.dart';
 import 'package:bucketlist/widgets/medium_rectangle_ad_widget.dart';
 import 'package:bucketlist/widgets/optimized_filter_chip.dart';
 import 'package:flutter/material.dart';
@@ -74,29 +75,20 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            'Tags (optional)',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
+        Row(
           children:
               _tagIds.map((tagId) {
                 final isSelected = _selectedTags.contains(tagId);
 
-                return OptimizedFilterChip(
-                  key: ValueKey(tagId),
-                  tagId: tagId,
-                  isSelected: isSelected,
-                  onSelected: (_) => _toggleTag(tagId),
-                  textColor: Theme.of(context).colorScheme.onSurface,
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: OptimizedFilterChip(
+                    key: ValueKey(tagId),
+                    tagId: tagId,
+                    isSelected: isSelected,
+                    onSelected: (_) => _toggleTag(tagId),
+                    textColor: Theme.of(context).colorScheme.onSurface,
+                  ),
                 );
               }).toList(),
         ),
@@ -356,18 +348,10 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    TextFormField(
+                    CustomTextFormField(
                       controller: _itemController,
-                      decoration: InputDecoration(
-                        labelText: 'Dream Title',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: Icon(
-                          Icons.star_outline,
-                          color: theme.colorScheme.primary,
-                        ),
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
-                      ),
-                      style: TextStyle(color: theme.colorScheme.onBackground),
+                      labelText: 'Dream Title',
+                      prefixIcon: Icons.star_outline,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Please enter your dream';
@@ -376,18 +360,10 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    CustomTextFormField(
                       controller: _priceController,
-                      decoration: InputDecoration(
-                        labelText: 'Estimated Price (optional)',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: Icon(
-                          Icons.attach_money,
-                          color: theme.colorScheme.primary,
-                        ),
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
-                      ),
-                      style: TextStyle(color: theme.colorScheme.onBackground),
+                      labelText: 'Estimated Price (optional)',
+                      prefixIcon: Icons.attach_money,
                       keyboardType: TextInputType.number,
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
@@ -397,28 +373,34 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Add tag selector
-                    _buildTagSelector(),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 0, bottom: 8),
+
+                      child: Row(
+                        children: [
+                          Text(
+                            'Tags (optional)',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: [_buildTagSelector()]),
+                    ),
                     const SizedBox(height: 16),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: CustomTextFormField(
                             controller: _imageUrlController,
-                            decoration: InputDecoration(
-                              labelText: 'Image (optional)',
-                              border: const OutlineInputBorder(),
-                              prefixIcon: Icon(
-                                Icons.image_outlined,
-                                color: theme.colorScheme.primary,
-                              ),
-                              labelStyle: TextStyle(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            style: TextStyle(
-                              color: theme.colorScheme.onBackground,
-                            ),
+                            labelText: 'Image (optional)',
+                            prefixIcon: Icons.image_outlined,
                             keyboardType: TextInputType.url,
                           ),
                         ),
@@ -465,20 +447,12 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    TextFormField(
+                    CustomTextFormField(
                       controller: _descriptionController,
-                      decoration: InputDecoration(
-                        labelText: 'Description (optional)',
-                        border: const OutlineInputBorder(),
-                        prefixIcon: Icon(
-                          Icons.description_outlined,
-                          color: theme.colorScheme.primary,
-                        ),
-                        labelStyle: TextStyle(color: theme.colorScheme.primary),
-                        alignLabelWithHint: true,
-                      ),
-                      style: TextStyle(color: theme.colorScheme.onBackground),
+                      labelText: 'Description (optional)',
+                      prefixIcon: Icons.description_outlined,
                       maxLines: 3,
+                      alignLabelWithHint: true,
                     ),
                     const SizedBox(height: 16),
                     SwitchListTile(

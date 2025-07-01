@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:bucketlist/widgets/list_tile_ad_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bucketlist/screens/qr_code_screen.dart';
 import 'package:bucketlist/screens/qr_scanner_screen.dart';
@@ -270,6 +271,11 @@ class _SharedBucketListScreenState extends State<SharedBucketListScreen>
         final adService = Provider.of<AdService>(context, listen: false);
         final itemsWithAds = <dynamic>[];
 
+        // Add ListTileAdWidget at the beginning for user shared mode
+        if (_currentViewMode == ViewMode.userShared && !_isLoading) {
+          itemsWithAds.add('listTileAd');
+        }
+
         // Insert ads into the list
         for (int i = 0; i < items.length; i++) {
           itemsWithAds.add(items[i]);
@@ -286,9 +292,9 @@ class _SharedBucketListScreenState extends State<SharedBucketListScreen>
           itemBuilder: (context, index) {
             final item = itemsWithAds[index];
 
-            // Check if it's an ad placeholder
-            if (item == 'ad') {
-              return const NativeAdItemWidget();
+            // Check if it's the ListTileAdWidget
+            if (item == 'listTileAd') {
+              return const ListTileAdWidget();
             }
 
             return Card(
@@ -538,9 +544,6 @@ class _SharedBucketListScreenState extends State<SharedBucketListScreen>
         ),
 
         // Add a medium rectangle ad between search and results
-        if (_currentViewMode == ViewMode.userShared && !_isLoading)
-          const MediumRectangleAdWidget(),
-
         if (_currentViewMode == ViewMode.userShared)
           Expanded(child: _buildBucketListContent()),
       ],
