@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class CustomTextFormField extends StatelessWidget {
   final TextEditingController? controller;
@@ -16,6 +17,15 @@ class CustomTextFormField extends StatelessWidget {
   final bool readOnly;
   final String? hintText;
 
+  // FlutterFlow-style properties
+  final bool showAnimation;
+  final Duration animationDuration;
+  final Color? customFillColor;
+  final Color? customBorderColor;
+  final double borderRadius;
+  final EdgeInsetsGeometry? contentPadding;
+  final bool autoSize;
+
   const CustomTextFormField({
     super.key,
     this.controller,
@@ -31,60 +41,108 @@ class CustomTextFormField extends StatelessWidget {
     this.onTap,
     this.readOnly = false,
     this.hintText,
+
+    // FlutterFlow-style defaults
+    this.showAnimation = true,
+    this.animationDuration = const Duration(milliseconds: 300),
+    this.customFillColor,
+    this.customBorderColor,
+    this.borderRadius = 25.0, // More rounded for pill shape
+    this.contentPadding,
+    this.autoSize = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return TextFormField(
+    Widget textField = TextFormField(
       controller: controller,
       enabled: enabled,
       readOnly: readOnly,
       onTap: onTap,
       decoration: InputDecoration(
-        labelText: labelText,
-        hintText: hintText,
-        border: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12.0)),
+        // Use hintText instead of labelText for placeholder effect
+        hintText: hintText ?? labelText,
+        hintStyle: TextStyle(
+          color:
+              theme.brightness == Brightness.dark
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
+        ),
+        contentPadding:
+            contentPadding ??
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+          borderSide: BorderSide.none, // Remove border for clean look
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(12.0)),
-          borderSide: BorderSide(
-            color: theme.colorScheme.outline.withOpacity(0.5),
-            width: 1,
-          ),
+          borderSide: BorderSide.none, // No border for clean pill shape
+          borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(12.0)),
-          borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+          borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+          borderSide: BorderSide(
+            color: customBorderColor ?? theme.colorScheme.primary,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(12.0)),
-          borderSide: BorderSide(color: theme.colorScheme.error, width: 1),
+          borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(12.0)),
-          borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
+          borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+          borderSide: BorderSide(color: theme.colorScheme.error, width: 1.5),
         ),
         prefixIcon:
             prefixIcon != null
-                ? Icon(prefixIcon, color: theme.colorScheme.primary)
+                ? Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: Icon(
+                    prefixIcon,
+                    color:
+                        theme.brightness == Brightness.dark
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                    size: 20,
+                  ),
+                )
                 : null,
         suffixIcon: suffixIcon,
-        labelStyle: TextStyle(
-          color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w500,
-        ),
+        // Remove labelStyle since we're not using labels
         alignLabelWithHint: alignLabelWithHint,
         filled: true,
-        fillColor: theme.colorScheme.surface.withOpacity(0.1),
+        fillColor:
+            customFillColor ??
+            (theme.brightness == Brightness.dark
+                ? Colors.grey[800]?.withOpacity(0.3)
+                : Colors.grey[200]?.withOpacity(0.8)),
+        // Remove label and use hintText for placeholder style
+        floatingLabelBehavior: FloatingLabelBehavior.never,
       ),
-      style: TextStyle(color: theme.colorScheme.onBackground, fontSize: 16),
+      style: TextStyle(
+        color: theme.colorScheme.onBackground,
+        fontSize: 16,
+        fontWeight: FontWeight.normal,
+      ),
       validator: validator,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       maxLines: maxLines,
     );
+
+    // Apply FlutterFlow-style animation if enabled
+    if (showAnimation) {
+      return textField
+          .animate()
+          .fadeIn(duration: animationDuration)
+          .slideY(begin: 0.2, end: 0, duration: animationDuration);
+    }
+
+    return textField;
   }
 }

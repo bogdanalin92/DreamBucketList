@@ -332,25 +332,67 @@ class MainscreenState extends State<Mainscreen>
             ),
           ),
           const Spacer(),
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SharedBucketListScreen(),
-                ),
-              );
+          // Breadcrumb menu replacing individual buttons
+          PopupMenuButton<String>(
+            onSelected: (String value) {
+              switch (value) {
+                case 'shared':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SharedBucketListScreen(),
+                    ),
+                  );
+                  break;
+                case 'about':
+                  showAboutApp();
+                  break;
+              }
             },
-            icon: Icon(
-              Icons.share_outlined,
-              color: theme.colorScheme.onSurface,
+            itemBuilder:
+                (BuildContext context) => [
+                  PopupMenuItem<String>(
+                    value: 'shared',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.share_outlined,
+                          color: theme.colorScheme.onSurface,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'View Shared Items',
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'about',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: theme.colorScheme.onSurface,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'About',
+                          style: TextStyle(color: theme.colorScheme.onSurface),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+            icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
+            tooltip: 'More options',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            tooltip: "View Shared Items",
-          ),
-          IconButton(
-            onPressed: showAboutApp,
-            icon: Icon(Icons.info_outline, color: theme.colorScheme.onSurface),
-            tooltip: "About",
+            elevation: 8,
+            offset: const Offset(0, 40),
           ),
         ],
       ),
@@ -602,9 +644,9 @@ class MainscreenState extends State<Mainscreen>
                           key: ValueKey('tag_${tagId}_${isSelected}'),
                           label: Text(tagName),
                           selected: isSelected,
-                          checkmarkColor: Colors.white,
                           selectedColor: tagColor,
                           backgroundColor: tagColor.withOpacity(0.1),
+                          side: BorderSide.none, // Remove the white border
                           labelStyle: TextStyle(
                             color:
                                 isSelected
@@ -621,6 +663,9 @@ class MainscreenState extends State<Mainscreen>
                               _applyFilters(viewModel);
                             });
                           },
+                          showCheckmark:
+                              false, // Remove the check mark when selected
+                          elevation: isSelected ? 2 : 0,
                         ),
                       );
                     }).toList(),

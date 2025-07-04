@@ -372,25 +372,54 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Add tag selector
-                    Padding(
-                      padding: const EdgeInsets.only(left: 0, bottom: 8),
+                    // Tags section styled like other input fields
+                    Container(
+                      decoration: BoxDecoration(
+                        color:
+                            (theme.brightness == Brightness.dark
+                                ? Colors.grey[800]?.withOpacity(0.3)
+                                : Colors.grey[200]?.withOpacity(0.8)),
+                        borderRadius: BorderRadius.circular(25),
+                      ),
 
-                      child: Row(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Tags (optional)',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.local_offer_outlined,
+                                color:
+                                    theme.brightness == Brightness.dark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Tags (optional)',
+                                style: TextStyle(
+                                  color:
+                                      theme.brightness == Brightness.dark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(children: [_buildTagSelector()]),
                           ),
                         ],
                       ),
-                    ),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(children: [_buildTagSelector()]),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -411,6 +440,7 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                             onPressed:
                                 _isUploadingImage ? null : _pickAndUploadImage,
                             style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.colorScheme.secondary,
                               padding: const EdgeInsets.all(15),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -454,100 +484,218 @@ class _AddBucketListScreenState extends State<AddBucketListScreen> {
                       maxLines: 3,
                       alignLabelWithHint: true,
                     ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      title: Text(
-                        'Already Completed?',
-                        style: TextStyle(color: theme.colorScheme.onBackground),
-                      ),
-                      subtitle: Text(
-                        'Mark if you\'ve already achieved this dream',
-                        style: TextStyle(
-                          color: Color.alphaBlend(
-                            Colors.grey.withOpacity(0.3),
-                            theme.colorScheme.onBackground,
-                          ),
-                        ),
-                      ),
-                      value: _isComplete,
-                      activeColor: theme.colorScheme.primary,
-                      onChanged: (bool value) {
-                        setState(() {
-                          _isComplete = value;
-                        });
-                      },
-                    ),
-                    SwitchListTile(
-                      title: Text(
-                        'Shareable',
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                      ),
-                      subtitle: Consumer<AuthProvider>(
-                        builder: (context, authProvider, _) {
-                          String subtitle =
-                              'Allow sharing this dream through QR code';
-                          if (authProvider.isAnonymous &&
-                              _imageUrlController.text.isNotEmpty) {
-                            if (_isShareable &&
-                                _localImageService.isLocalPath(
-                                  _imageUrlController.text,
-                                )) {
-                              subtitle +=
-                                  '\nNote: Local image will be uploaded to Imgur when shared';
-                            } else if (!_isShareable &&
-                                !_localImageService.isLocalPath(
-                                  _imageUrlController.text,
-                                )) {
-                              subtitle +=
-                                  '\nNote: Network image will be saved locally and removed from Imgur';
-                            }
-                          }
-                          return Text(
-                            subtitle,
-                            style: TextStyle(
-                              color: Color.alphaBlend(
-                                Colors.grey.withOpacity(0.3),
-                                theme.colorScheme.onBackground,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      value: _isShareable,
-                      activeColor: theme.colorScheme.primary,
-                      onChanged:
-                          _isUploadingImage ? null : _handleShareableToggle,
-                    ),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isSubmitting ? null : _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.colorScheme.primary,
-                          foregroundColor: theme.colorScheme.onPrimary,
-                          shape: RoundedRectangleBorder(
+                    // Row with toggle buttons and main button
+                    Row(
+                      children: [
+                        // Already Completed Toggle (compact)
+                        Container(
+                          decoration: BoxDecoration(
+                            color:
+                                _isComplete
+                                    ? theme.colorScheme.primary.withOpacity(0.1)
+                                    : theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  _isComplete
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline.withOpacity(
+                                        0.3,
+                                      ),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _isComplete = !_isComplete;
+                                  });
+                                },
+                                icon: Icon(
+                                  _isComplete
+                                      ? Icons.check_circle
+                                      : Icons.check_circle_outline,
+                                  color:
+                                      _isComplete
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme.outline,
+                                ),
+                                tooltip: 'Mark as completed',
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => AlertDialog(
+                                          title: const Text(
+                                            'Already Completed?',
+                                          ),
+                                          content: const Text(
+                                            'Mark this option if you\'ve already achieved this dream. '
+                                            'This helps you track your accomplishments.',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(context),
+                                              child: const Text('Got it'),
+                                            ),
+                                          ],
+                                        ),
+                                  );
+                                },
+                                icon: Icon(
+                                  Icons.info_outline,
+                                  size: 18,
+                                  color: theme.colorScheme.outline,
+                                ),
+                                tooltip: 'More info',
+                              ),
+                            ],
                           ),
                         ),
-                        child:
-                            _isSubmitting
-                                ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      theme.colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                )
-                                : const Text(
-                                  'Add to Bucket List',
-                                  style: TextStyle(fontSize: 16),
+                        const SizedBox(width: 8),
+
+                        // Shareable Toggle (compact)
+                        Container(
+                          decoration: BoxDecoration(
+                            color:
+                                _isShareable
+                                    ? theme.colorScheme.primary.withOpacity(0.1)
+                                    : theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color:
+                                  _isShareable
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline.withOpacity(
+                                        0.3,
+                                      ),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed:
+                                    _isUploadingImage
+                                        ? null
+                                        : () => _handleShareableToggle(
+                                          !_isShareable,
+                                        ),
+                                icon: Icon(
+                                  _isShareable
+                                      ? Icons.share
+                                      : Icons.share_outlined,
+                                  color:
+                                      _isShareable
+                                          ? theme.colorScheme.primary
+                                          : theme.colorScheme.outline,
                                 ),
-                      ),
+                                tooltip: 'Make shareable',
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (context) => AlertDialog(
+                                          title: const Text('Shareable Dream'),
+                                          content: Consumer<AuthProvider>(
+                                            builder: (
+                                              context,
+                                              authProvider,
+                                              _,
+                                            ) {
+                                              String content =
+                                                  'Allow sharing this dream through QR code with others.';
+                                              if (authProvider.isAnonymous &&
+                                                  _imageUrlController
+                                                      .text
+                                                      .isNotEmpty) {
+                                                if (_isShareable &&
+                                                    _localImageService
+                                                        .isLocalPath(
+                                                          _imageUrlController
+                                                              .text,
+                                                        )) {
+                                                  content +=
+                                                      '\n\nNote: Local image will be uploaded to Imgur when shared.';
+                                                } else if (!_isShareable &&
+                                                    !_localImageService
+                                                        .isLocalPath(
+                                                          _imageUrlController
+                                                              .text,
+                                                        )) {
+                                                  content +=
+                                                      '\n\nNote: Network image will be saved locally and removed from Imgur.';
+                                                }
+                                              }
+                                              return Text(content);
+                                            },
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.pop(context),
+                                              child: const Text('Got it'),
+                                            ),
+                                          ],
+                                        ),
+                                  );
+                                },
+                                icon: Icon(
+                                  Icons.info_outline,
+                                  size: 18,
+                                  color: theme.colorScheme.outline,
+                                ),
+                                tooltip: 'More info',
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+
+                        // Main Add Button (expanded)
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isSubmitting ? null : _submitForm,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child:
+                                  _isSubmitting
+                                      ? SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                theme.colorScheme.onPrimary,
+                                              ),
+                                        ),
+                                      )
+                                      : const Text(
+                                        'Add to Bucket List',
+                                        style: TextStyle(fontSize: 16),
+                                      ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
 
                     // Add native ad at bottom of form

@@ -10,7 +10,7 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle:${project.extra["gradle_version"]}")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${project.extra["kotlin_version"]}")
-        classpath("com.google.gms:google-services:4.3.15")
+        classpath("com.google.gms:google-services:4.4.2")  // Updated to latest version
     }
 }
 

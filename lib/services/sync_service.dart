@@ -128,13 +128,6 @@ class SyncService {
     final existingItem = await _localStorageService.getBucketListItem(item.id);
     final bool wasShareable = existingItem?.shareable ?? false;
 
-    // Ensure we preserve tags from the existing item if they're not specified in the updated item
-    if (existingItem != null &&
-        item.tags.isNotEmpty &&
-        existingItem.tags.isNotEmpty) {
-      item = item.copyWith(tags: List<String>.from(existingItem.tags));
-    }
-
     // Local update remains on main thread as it's usually fast
     await _localStorageService.updateBucketListItem(
       item.copyWith(isSyncedWithFirebase: false),

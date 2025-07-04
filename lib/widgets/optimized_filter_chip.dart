@@ -37,10 +37,12 @@ class OptimizedFilterChip extends StatelessWidget {
       labelStyle: TextStyle(
         color:
             isSelected
-                ? Colors.white
+                ? Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.grey[600]
                 : textColor ?? Theme.of(context).colorScheme.onSurface,
       ),
-      checkmarkColor: Colors.white,
+      showCheckmark: false, // Remove the check mark when selected
       elevation: isSelected ? 2 : 0,
       pressElevation: 2,
       materialTapTargetSize:

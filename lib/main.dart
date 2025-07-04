@@ -54,8 +54,39 @@ void main() async {
   // Create the Firebase services factory
   final servicesFactory = FirebaseServicesFactory();
 
-  // Initialize Firebase App Check
-  await servicesFactory.appCheckService.initialize();
+  // Initialize Firebase App Check with better error handling
+  try {
+    print('🔥 Initializing Firebase App Check...');
+    await servicesFactory.appCheckService.initialize();
+    print('✅ Firebase App Check initialized successfully');
+
+    // Test App Check token generation
+    final token = await servicesFactory.appCheckService.getToken();
+    if (token.isNotEmpty) {
+      print('✅ App Check token generated successfully');
+      print('Token preview: ${token.substring(0, 20)}...');
+    } else {
+      print('⚠️ App Check token generation failed - using fallback');
+    }
+  } catch (e) {
+    print('❌ Warning: Firebase App Check initialization failed: $e');
+    print('This is expected in development - App will use debug tokens');
+    // In development, this is normal and the app will work with debug tokens
+  }
+
+  // Test Firebase Auth status
+  try {
+    final currentUser = servicesFactory.authService.currentUser;
+    if (currentUser != null) {
+      print(
+        '✅ User authenticated: ${currentUser.uid} (Anonymous: ${currentUser.isAnonymous})',
+      );
+    } else {
+      print('⚠️ No user authenticated - will sign in anonymously');
+    }
+  } catch (e) {
+    print('❌ Error checking auth status: $e');
+  }
 
   // Initialize local storage service and wait for it to be ready
   final localStorageService = await LocalStorageService.create();

@@ -1,8 +1,8 @@
 name: bucketlist
-description: "A new Flutter project."
+description: "A Flutter application for managing and sharing bucket lists with friends and family."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+6  # Updated to match Android versionCode
+version: 1.0.0+7  # Updated to match Android versionCode
 
 environment:
   sdk: ^3.7.0
@@ -18,7 +18,7 @@ dependencies:
   cloud_firestore: ^5.6.5
   firebase_auth: ^5.5.1
   firebase_core: ^3.12.1
-  firebase_app_check: ^0.3.2+4  # Added Firebase App Check
+  firebase_app_check: ^0.3.2+7  # Updated to latest available version for Play Integrity API
   mobile_scanner: ^6.0.0
   image_picker: ^1.0.7
   path_provider: ^2.1.2  # Add path_provider for local file storage
@@ -34,6 +34,10 @@ dependencies:
   google_mobile_ads: ^5.1.0
   # Environment variables
   flutter_dotenv: ^5.1.0
+  # FlutterFlow-style utilities and animations
+  flutter_animate: ^4.2.0
+  auto_size_text: ^3.0.0
+  font_awesome_flutter: ^10.6.0
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +6,8 @@ import 'viewmodels/bucket_list_view_model.dart';
 import 'utils/image_picker_helper.dart';
 import 'widgets/medium_rectangle_ad_widget.dart';
 import 'widgets/universal_image.dart';
+import 'widgets/custom_text_form_field.dart';
+import 'widgets/optimized_filter_chip.dart';
 import 'services/local_image_service.dart';
 import 'providers/auth_provider.dart';
 import 'constants/tag_constants.dart'; // Import tag constants
@@ -78,91 +79,66 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
 
   // Widget to build tag selector chips for edit mode
   Widget _buildTagSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8),
-          child: Text(
-            'Tags (optional)',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w500,
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.local_offer_outlined,
+                color:
+                    theme.brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Tags (optional)',
+                style: TextStyle(
+                  color:
+                      theme.brightness == Brightness.dark
+                          ? Colors.grey[400]
+                          : Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children:
+                  TagConstants.allTagIds.map((tagId) {
+                    final isSelected = _selectedTags.contains(tagId);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: OptimizedFilterChip(
+                        key: ValueKey(tagId),
+                        tagId: tagId,
+                        isSelected: isSelected,
+                        onSelected: (_) => _toggleTag(tagId),
+                        textColor: theme.colorScheme.onSurface,
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
-        ),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children:
-              TagConstants.allTagIds.map((tagId) {
-                final isSelected = _selectedTags.contains(tagId);
-                final tagName = TagConstants.getTagName(tagId);
-                final tagColor = TagConstants.getTagColor(tagId);
-                final tagIcon = TagConstants.getTagIcon(tagId);
-
-                return FilterChip(
-                  label: Text(tagName),
-                  selected: isSelected,
-                  onSelected: (_) => _toggleTag(tagId),
-                  avatar: Icon(
-                    tagIcon,
-                    color: isSelected ? Colors.white : tagColor,
-                    size: 18,
-                  ),
-                  backgroundColor: tagColor.withOpacity(0.1),
-                  selectedColor: tagColor,
-                  labelStyle: TextStyle(
-                    color:
-                        isSelected
-                            ? Colors.white
-                            : Theme.of(context).colorScheme.onSurface,
-                  ),
-                  checkmarkColor: Colors.white,
-                  elevation: isSelected ? 2 : 0,
-                  pressElevation: 2,
-                );
-              }).toList(),
-        ),
-      ],
-    );
-  }
-
-  // Widget to display tags in view mode
-  Widget _buildTagsDisplay() {
-    if (_selectedTags.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Text(
-          'Tags:',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 8.0,
-          children:
-              _selectedTags.map((tagId) {
-                final tagName = TagConstants.getTagName(tagId);
-                final tagColor = TagConstants.getTagColor(tagId);
-                final tagIcon = TagConstants.getTagIcon(tagId);
-
-                return Chip(
-                  label: Text(tagName),
-                  avatar: Icon(tagIcon, color: Colors.white, size: 16),
-                  backgroundColor: tagColor,
-                  labelStyle: const TextStyle(color: Colors.white),
-                );
-              }).toList(),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -261,16 +237,16 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
       }
     }
 
-    final updatedItem = BucketListItem(
-      userId: widget.bucketlistitem.userId,
-      id: widget.bucketlistitem.id,
+    final updatedItem = widget.bucketlistitem.copyWith(
       item: itemController.text,
       price: _parsePrice(priceController.text),
       image: imageUrl,
       details: detailsController.text.isEmpty ? null : detailsController.text,
       complete: isComplete,
-      shareable: isShareable, // Include shareable in updates
-      tags: _selectedTags, // Include updated tags in the item
+      shareable: isShareable,
+      tags: List<String>.from(
+        _selectedTags,
+      ), // Ensure we create a new list from _selectedTags
     );
 
     // Navigate back immediately
@@ -290,157 +266,6 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
-      }
-    }
-  }
-
-  Future<void> _toggleComplete() async {
-    final viewModel = context.read<BucketListViewModel>();
-
-    // Create updated item with toggled complete status
-    final updatedItem = widget.bucketlistitem.copyWith(complete: isComplete);
-
-    try {
-      await viewModel.updateBucketListItem(updatedItem);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating status: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        // Revert the state if updating fails
-        setState(() {
-          isComplete = !isComplete;
-        });
-      }
-    }
-  }
-
-  Future<void> _toggleShareable() async {
-    final viewModel = context.read<BucketListViewModel>();
-    final authProvider = context.read<AuthProvider>();
-    final localImageService = LocalImageService();
-
-    // Case 1: Making the item shareable and it has a local image
-    if (isShareable &&
-        imageController.text.isNotEmpty &&
-        localImageService.isLocalPath(imageController.text)) {
-      try {
-        // Show upload progress
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Uploading image for sharing...')),
-        );
-
-        // Upload the local image to Imgur
-        final String networkUrl = await localImageService
-            .convertLocalToNetworkImage(imageController.text);
-
-        // Update the image URL
-        setState(() {
-          imageController.text = networkUrl;
-        });
-
-        // Create the updated item with shareable and the new network image
-        final updatedItem = widget.bucketlistitem.copyWith(
-          shareable: isShareable,
-          image: networkUrl,
-          tags: _selectedTags, // Include current tags when updating
-        );
-
-        await viewModel.updateBucketListItem(updatedItem);
-        return;
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Error uploading image for sharing: ${e.toString()}',
-              ),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          // Revert the state if updating fails
-          setState(() {
-            isShareable = !isShareable;
-          });
-          return;
-        }
-      }
-    }
-    // Case 2: Making the item non-shareable and it has a network image
-    else if (!isShareable &&
-        imageController.text.isNotEmpty &&
-        !localImageService.isLocalPath(imageController.text) &&
-        authProvider.isAnonymous) {
-      try {
-        // Show download progress
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Converting to local storage...')),
-        );
-
-        final String networkUrl = imageController.text;
-
-        // Download the image and store it locally
-        final String localPath = await localImageService
-            .convertNetworkToLocalImage(networkUrl);
-
-        // Delete the network image from Imgur
-        await localImageService.deleteNetworkImage(networkUrl);
-
-        // Update the image URL to local path
-        setState(() {
-          imageController.text = localPath;
-        });
-
-        // Create the updated item with non-shareable and the new local image
-        final updatedItem = widget.bucketlistitem.copyWith(
-          shareable: isShareable,
-          image: localPath,
-          tags: _selectedTags, // Include current tags when updating
-        );
-
-        await viewModel.updateBucketListItem(updatedItem);
-        return;
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Error converting to local storage: ${e.toString()}',
-              ),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-          // Revert the state if updating fails
-          setState(() {
-            isShareable = !isShareable;
-          });
-          return;
-        }
-      }
-    }
-
-    // Normal flow for cases that don't need image conversion
-    final updatedItem = widget.bucketlistitem.copyWith(
-      shareable: isShareable,
-      tags: _selectedTags, // Include current tags when updating
-    );
-    try {
-      await viewModel.updateBucketListItem(updatedItem);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating sharing status: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        // Revert the state if updating fails
-        setState(() {
-          isShareable = !isShareable;
-        });
       }
     }
   }
@@ -536,21 +361,6 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
           ),
           backgroundColor: theme.colorScheme.surface,
           actions: [
-            if (!_isEditMode)
-              IconButton(
-                icon: Icon(Icons.edit, color: theme.colorScheme.onSurface),
-                onPressed: _toggleEditMode,
-                tooltip: 'Edit',
-              ),
-            if (!_isEditMode)
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: theme.colorScheme.error,
-                ),
-                onPressed: _showDeleteConfirmation,
-                tooltip: 'Delete',
-              ),
             if (_isEditMode)
               IconButton(
                 icon: const Icon(Icons.check, color: Colors.green),
@@ -562,6 +372,66 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
                 icon: Icon(Icons.close, color: theme.colorScheme.error),
                 onPressed: _toggleEditMode,
                 tooltip: 'Cancel',
+              ),
+            if (!_isEditMode)
+              // Breadcrumb menu for non-edit mode actions
+              PopupMenuButton<String>(
+                onSelected: (String value) {
+                  switch (value) {
+                    case 'edit':
+                      _toggleEditMode();
+                      break;
+                    case 'delete':
+                      _showDeleteConfirmation();
+                      break;
+                  }
+                },
+                itemBuilder:
+                    (BuildContext context) => [
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.edit,
+                              color: theme.colorScheme.onSurface,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Edit Dream',
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline,
+                              color: theme.colorScheme.error,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Delete Dream',
+                              style: TextStyle(color: theme.colorScheme.error),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface),
+                tooltip: 'More options',
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 8,
+                offset: const Offset(0, 40),
               ),
           ],
         ),
@@ -780,33 +650,22 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
                             ),
                           ),
                         ] else if (_isEditMode) ...[
-                          TextFormField(
+                          CustomTextFormField(
                             controller: itemController,
-                            decoration: InputDecoration(
-                              labelText: 'Dream Title',
-                              border: const OutlineInputBorder(),
-                              labelStyle: TextStyle(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurface,
-                            ),
+                            labelText: 'Dream Title',
+                            prefixIcon: Icons.star_outline,
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter your dream';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
-                          TextFormField(
+                          CustomTextFormField(
                             controller: priceController,
-                            decoration: InputDecoration(
-                              labelText: 'Price (optional)',
-                              prefixText: '\$ ',
-                              border: const OutlineInputBorder(),
-                              labelStyle: TextStyle(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurface,
-                            ),
+                            labelText: 'Estimated Price (optional)',
+                            prefixIcon: Icons.attach_money,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
@@ -822,103 +681,216 @@ class _ViewItemBucketState extends State<ViewItemBucket> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: TextFormField(
+                                child: CustomTextFormField(
                                   controller: imageController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Image URL (optional)',
-                                    border: const OutlineInputBorder(),
-                                    labelStyle: TextStyle(
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onSurface,
-                                  ),
+                                  labelText: 'Image (optional)',
+                                  prefixIcon: Icons.image_outlined,
+                                  keyboardType: TextInputType.url,
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed:
-                                    _isUploadingImage
-                                        ? null
-                                        : _pickAndUploadImage,
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.all(15),
-                                  backgroundColor: theme.colorScheme.onSurface,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: ElevatedButton(
+                                  onPressed:
+                                      _isUploadingImage
+                                          ? null
+                                          : _pickAndUploadImage,
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.all(15),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child:
+                                      _isUploadingImage
+                                          ? SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                    theme.colorScheme.onPrimary,
+                                                  ),
+                                            ),
+                                          )
+                                          : const Icon(Icons.add_a_photo),
                                 ),
-                                child:
-                                    _isUploadingImage
-                                        ? SizedBox(
-                                          height: 20,
-                                          width: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  theme.colorScheme.onPrimary,
-                                                ),
-                                          ),
-                                        )
-                                        : const Icon(Icons.add_a_photo),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          TextFormField(
+                          CustomTextFormField(
                             controller: detailsController,
-                            decoration: InputDecoration(
-                              labelText: 'Description (optional)',
-                              border: const OutlineInputBorder(),
-                              alignLabelWithHint: true,
-                              labelStyle: TextStyle(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurface,
-                            ),
+                            labelText: 'Description (optional)',
+                            prefixIcon: Icons.description_outlined,
                             maxLines: 3,
+                            alignLabelWithHint: true,
                           ),
-                          const SizedBox(height: 16),
-                          SwitchListTile(
-                            title: Text(
-                              'Already Completed?',
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            value: isComplete,
-                            activeColor: theme.colorScheme.primary,
-                            onChanged: (bool value) {
-                              setState(() {
-                                isComplete = value;
-                              });
-                            },
-                          ),
-                          SwitchListTile(
-                            title: Text(
-                              'Shareable',
-                              style: TextStyle(
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Allow sharing through QR code',
-                              style: TextStyle(
-                                color: Color.alphaBlend(
-                                  Colors.grey.withAlpha(33),
-                                  theme.colorScheme.onSurface,
+                          const SizedBox(height: 24),
+                          // Row with toggle buttons similar to addBucket
+                          Row(
+                            children: [
+                              // Already Completed Toggle (compact)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      isComplete
+                                          ? theme.colorScheme.primary
+                                              .withOpacity(0.1)
+                                          : theme.colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        isComplete
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.outline
+                                                .withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          isComplete = !isComplete;
+                                        });
+                                      },
+                                      icon: Icon(
+                                        isComplete
+                                            ? Icons.check_circle
+                                            : Icons.check_circle_outline,
+                                        color:
+                                            isComplete
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.outline,
+                                      ),
+                                      tooltip: 'Mark as completed',
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder:
+                                              (context) => AlertDialog(
+                                                title: const Text(
+                                                  'Already Completed?',
+                                                ),
+                                                content: const Text(
+                                                  'Mark this option if you\'ve already achieved this dream. '
+                                                  'This helps you track your accomplishments.',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed:
+                                                        () => Navigator.pop(
+                                                          context,
+                                                        ),
+                                                    child: const Text('Got it'),
+                                                  ),
+                                                ],
+                                              ),
+                                        );
+                                      },
+                                      icon: Icon(
+                                        Icons.info_outline,
+                                        size: 18,
+                                        color: theme.colorScheme.outline,
+                                      ),
+                                      tooltip: 'More info',
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            value: isShareable,
-                            activeColor: theme.colorScheme.primary,
-                            onChanged: (bool value) {
-                              setState(() {
-                                isShareable = value;
-                              });
-                              // Don't call _toggleShareable() here - we'll handle it when saving the form
-                            },
+                              const SizedBox(width: 8),
+
+                              // Shareable Toggle (compact)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      isShareable
+                                          ? theme.colorScheme.primary
+                                              .withOpacity(0.1)
+                                          : theme.colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color:
+                                        isShareable
+                                            ? theme.colorScheme.primary
+                                            : theme.colorScheme.outline
+                                                .withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed:
+                                          _isUploadingImage
+                                              ? null
+                                              : () {
+                                                setState(() {
+                                                  isShareable = !isShareable;
+                                                });
+                                              },
+                                      icon: Icon(
+                                        isShareable
+                                            ? Icons.share
+                                            : Icons.share_outlined,
+                                        color:
+                                            isShareable
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.outline,
+                                      ),
+                                      tooltip: 'Make shareable',
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder:
+                                              (context) => AlertDialog(
+                                                title: const Text(
+                                                  'Shareable Dream',
+                                                ),
+                                                content: Consumer<AuthProvider>(
+                                                  builder: (
+                                                    context,
+                                                    authProvider,
+                                                    _,
+                                                  ) {
+                                                    String content =
+                                                        'Allow sharing this dream through QR code with others.';
+                                                    return Text(content);
+                                                  },
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed:
+                                                        () => Navigator.pop(
+                                                          context,
+                                                        ),
+                                                    child: const Text('Got it'),
+                                                  ),
+                                                ],
+                                              ),
+                                        );
+                                      },
+                                      icon: Icon(
+                                        Icons.info_outline,
+                                        size: 18,
+                                        color: theme.colorScheme.outline,
+                                      ),
+                                      tooltip: 'More info',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
 
