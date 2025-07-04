@@ -3,6 +3,7 @@ import 'package:bucketlist/screens/profile_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:bucketlist/firebase_options.dart';
 import 'package:bucketlist/providers/auth_provider.dart';
+import 'package:bucketlist/providers/user_provider.dart';
 import 'package:bucketlist/services/ad_factory_manager.dart';
 import 'package:bucketlist/services/ad_service.dart';
 import 'package:bucketlist/services/firebase_services_factory.dart';
@@ -127,6 +128,9 @@ void main() async {
               ),
         ),
 
+        // User provider for avatar and profile management
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+
         // Auth ViewModel with Firebase auth service
         ChangeNotifierProvider(
           create:
@@ -162,8 +166,37 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: const Mainscreen(), // Notice the lowercase 's' in Mainscreen
+      home: const AuthWrapper(), // Use AuthWrapper to initialize user data
       routes: {'/profile': (context) => const ProfileScreen()},
+    );
+  }
+}
+
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({Key? key}) : super(key: key);
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        if (authProvider.isAuthenticated) {
+          // Initialize user data when authenticated
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final userProvider = Provider.of<UserProvider>(
+              context,
+              listen: false,
+            );
+            userProvider.initializeUser();
+          });
+        }
+
+        return const Mainscreen();
+      },
     );
   }
 }

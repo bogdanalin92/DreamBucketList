@@ -38,6 +38,8 @@ dependencies:
   flutter_animate: ^4.2.0
   auto_size_text: ^3.0.0
   font_awesome_flutter: ^10.6.0
+  # SVG support for generated avatars
+  flutter_svg: ^2.0.7
 
 dev_dependencies:
   flutter_test:

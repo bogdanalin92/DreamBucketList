@@ -1,11 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
+enum AvatarType { initials, emoji, generated, uploaded }
+
 class UserModel {
   final String uid;
   final String? email;
   final String? displayName;
   final String? photoURL;
   final PrivacyConsent privacyConsent;
+  final String? avatarData;
+  final AvatarType avatarType;
+  final int? backgroundColor;
 
   UserModel({
     required this.uid,
@@ -13,6 +18,9 @@ class UserModel {
     this.displayName,
     this.photoURL,
     this.privacyConsent = const PrivacyConsent(),
+    this.avatarData,
+    this.avatarType = AvatarType.initials,
+    this.backgroundColor,
   });
 
   // Create a UserModel from a Firebase User
@@ -32,6 +40,9 @@ class UserModel {
     String? displayName,
     String? photoURL,
     PrivacyConsent? privacyConsent,
+    String? avatarData,
+    AvatarType? avatarType,
+    int? backgroundColor,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -39,6 +50,9 @@ class UserModel {
       displayName: displayName ?? this.displayName,
       photoURL: photoURL ?? this.photoURL,
       privacyConsent: privacyConsent ?? this.privacyConsent,
+      avatarData: avatarData ?? this.avatarData,
+      avatarType: avatarType ?? this.avatarType,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
     );
   }
 
@@ -50,6 +64,9 @@ class UserModel {
       'displayName': displayName,
       'photoURL': photoURL,
       'privacyConsent': privacyConsent.toMap(),
+      'avatarData': avatarData,
+      'avatarType': avatarType.name,
+      'backgroundColor': backgroundColor,
     };
   }
 
@@ -64,6 +81,15 @@ class UserModel {
           map['privacyConsent'] != null
               ? PrivacyConsent.fromMap(map['privacyConsent'])
               : const PrivacyConsent(),
+      avatarData: map['avatarData'],
+      avatarType:
+          map['avatarType'] != null
+              ? AvatarType.values.firstWhere(
+                (type) => type.name == map['avatarType'],
+                orElse: () => AvatarType.initials,
+              )
+              : AvatarType.initials,
+      backgroundColor: map['backgroundColor'],
     );
   }
 }

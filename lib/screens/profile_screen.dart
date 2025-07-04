@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/user_provider.dart';
 import '../main.dart';
 import 'login_screen.dart';
 import 'privacy_security_screen.dart';
+import 'avatar_customization_screen.dart';
 import '../services/preferences_service.dart';
+import '../widgets/user_avatar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -13,7 +16,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _optionsExpanded = false;
   bool _photoConsent = false;
   late PreferencesService _preferencesService;
 
@@ -45,7 +47,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (authProvider.isAuthenticated)
-                          _buildUserInfoCard(authProvider),
+                          Consumer<UserProvider>(
+                            builder: (context, userProvider, child) {
+                              return _buildUserInfoCard(
+                                authProvider,
+                                userProvider,
+                              );
+                            },
+                          ),
                         const SizedBox(height: 24),
                         _buildSettingsCard(),
                         const SizedBox(height: 24),
@@ -231,7 +240,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget _buildUserInfoCard(AuthProvider authProvider) {
+  Widget _buildUserInfoCard(
+    AuthProvider authProvider,
+    UserProvider userProvider,
+  ) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -240,22 +252,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'User Information',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'User Information',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AvatarCustomizationScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.edit),
+                  tooltip: 'Customize Avatar',
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  radius: 30,
-                  child: const Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.white,
-                  ),
-                ),
+                userProvider.userModel != null
+                    ? UserAvatar(
+                      user: userProvider.userModel!,
+                      radius: 30,
+                      showEditButton: true,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => const AvatarCustomizationScreen(),
+                          ),
+                        );
+                      },
+                    )
+                    : CircleAvatar(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      radius: 30,
+                      child: const Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.white,
+                      ),
+                    ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
