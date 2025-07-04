@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -126,16 +127,16 @@ class AvatarService {
     Color(0xFF84CC16), // Lime
   ];
 
-  // Generated avatar styles using DiceBear API
+  // Generated avatar styles using local patterns instead of DiceBear API
   static const List<Map<String, String>> generatedAvatarStyles = [
-    {'name': 'Avataaars', 'style': 'avataaars'},
-    {'name': 'Big Smile', 'style': 'big-smile'},
-    {'name': 'Bottts', 'style': 'bottts'},
-    {'name': 'Fun Emoji', 'style': 'fun-emoji'},
-    {'name': 'Initials', 'style': 'initials'},
-    {'name': 'Lorelei', 'style': 'lorelei'},
-    {'name': 'Personas', 'style': 'personas'},
-    {'name': 'Pixel Art', 'style': 'pixel-art'},
+    {'name': 'Geometric', 'style': 'geometric'},
+    {'name': 'Abstract', 'style': 'abstract'},
+    {'name': 'Gradient', 'style': 'gradient'},
+    {'name': 'Shapes', 'style': 'shapes'},
+    {'name': 'Patterns', 'style': 'patterns'},
+    {'name': 'Modern', 'style': 'modern'},
+    {'name': 'Minimal', 'style': 'minimal'},
+    {'name': 'Artistic', 'style': 'artistic'},
   ];
 
   /// Save emoji avatar to Firestore
@@ -154,13 +155,26 @@ class AvatarService {
     });
   }
 
-  /// Save generated avatar URL to Firestore
-  static Future<void> saveGeneratedAvatar(String avatarUrl) async {
+  /// Save generated avatar pattern to Firestore
+  static Future<void> saveGeneratedAvatar(
+    String pattern,
+    List<Color> colors,
+  ) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
+    // Store pattern data as JSON string
+    final patternData = {
+      'pattern': pattern,
+      'colors': colors.map((c) => c.value).toList(),
+      'seed': user.uid,
+    };
+
+    // Convert to JSON string for proper storage
+    final jsonString = jsonEncode(patternData);
+
     await _firestore.collection('users').doc(user.uid).update({
-      'avatarData': avatarUrl,
+      'avatarData': jsonString,
       'avatarType': AvatarType.generated.name,
       'backgroundColor': null,
       'lastUpdated': FieldValue.serverTimestamp(),
@@ -192,9 +206,40 @@ class AvatarService {
     return avatarColors[random.nextInt(avatarColors.length)];
   }
 
-  /// Generate avatar URL using DiceBear API (PNG format for better compatibility)
-  static String generateAvatarUrl(String style, String seed) {
-    return 'https://api.dicebear.com/7.x/$style/png?seed=$seed&backgroundColor=transparent&size=200';
+  /// Generate avatar pattern data instead of URL
+  static Map<String, dynamic> generateAvatarPattern(String style, String seed) {
+    final random = Random(seed.hashCode);
+
+    // Generate colors based on style
+    List<Color> colors;
+    switch (style) {
+      case 'geometric':
+        colors = [_generateRandomColor(random), _generateRandomColor(random)];
+        break;
+      case 'gradient':
+        final baseColor = avatarColors[random.nextInt(avatarColors.length)];
+        colors = [baseColor, _lightenColor(baseColor, 0.3)];
+        break;
+      case 'abstract':
+        colors = List.generate(3, (_) => _generateRandomColor(random));
+        break;
+      default:
+        colors = [avatarColors[random.nextInt(avatarColors.length)]];
+    }
+
+    return {
+      'pattern': style,
+      'colors': colors.map((c) => c.value).toList(),
+      'seed': seed,
+    };
+  }
+
+  static Color _generateRandomColor(Random random) {
+    return avatarColors[random.nextInt(avatarColors.length)];
+  }
+
+  static Color _lightenColor(Color color, double factor) {
+    return Color.lerp(color, Colors.white, factor) ?? color;
   }
 
   /// Get initials from display name

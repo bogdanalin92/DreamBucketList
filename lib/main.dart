@@ -191,7 +191,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
               context,
               listen: false,
             );
-            userProvider.initializeUser();
+            // Initialize user data if not already initialized
+            if (userProvider.userModel == null && !userProvider.isLoading) {
+              userProvider.initializeUser();
+            }
           });
         }
 

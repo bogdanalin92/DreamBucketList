@@ -1,9 +1,13 @@
+import 'dart:convert';
+import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../models/user_model.dart';
+import '../providers/user_provider.dart';
 import '../services/avatar_service.dart';
 import '../widgets/user_avatar.dart';
+import '../widgets/pattern_avatar.dart';
 
 class AvatarCustomizationWidget extends StatefulWidget {
   final UserModel user;
@@ -106,9 +110,23 @@ class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
       builder:
           (context) => EmojiAvatarPicker(
             onEmojiSelected: (emoji, backgroundColor) async {
-              await AvatarService.saveEmojiAvatar(emoji, backgroundColor);
-              widget.onAvatarChanged();
-              Navigator.pop(context);
+              try {
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
+                await userProvider.updateAvatar(
+                  avatarData: emoji,
+                  avatarType: AvatarType.emoji,
+                  backgroundColor: backgroundColor.value,
+                );
+                widget.onAvatarChanged();
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error updating avatar: $e')),
+                );
+              }
             },
           ),
     );
@@ -123,10 +141,32 @@ class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
       ),
       builder:
           (context) => GeneratedAvatarPicker(
-            onAvatarSelected: (avatarUrl) async {
-              await AvatarService.saveGeneratedAvatar(avatarUrl);
-              widget.onAvatarChanged();
-              Navigator.pop(context);
+            onAvatarSelected: (pattern, colors) async {
+              try {
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
+
+                // Create pattern data
+                final patternData = {
+                  'pattern': pattern,
+                  'colors': colors.map((c) => c.value).toList(),
+                  'seed': widget.user.uid,
+                };
+
+                await userProvider.updateAvatar(
+                  avatarData: jsonEncode(patternData),
+                  avatarType: AvatarType.generated,
+                  backgroundColor: null,
+                );
+                widget.onAvatarChanged();
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error updating avatar: $e')),
+                );
+              }
             },
           ),
     );
@@ -142,9 +182,23 @@ class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
           (context) => InitialsCustomizer(
             user: widget.user,
             onColorSelected: (backgroundColor) async {
-              await AvatarService.saveInitialsAvatar(backgroundColor);
-              widget.onAvatarChanged();
-              Navigator.pop(context);
+              try {
+                final userProvider = Provider.of<UserProvider>(
+                  context,
+                  listen: false,
+                );
+                await userProvider.updateAvatar(
+                  avatarData: null,
+                  avatarType: AvatarType.initials,
+                  backgroundColor: backgroundColor.value,
+                );
+                widget.onAvatarChanged();
+                Navigator.pop(context);
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error updating avatar: $e')),
+                );
+              }
             },
           ),
     );
@@ -273,7 +327,7 @@ class EmojiAvatarPicker extends StatelessWidget {
 }
 
 class GeneratedAvatarPicker extends StatelessWidget {
-  final Function(String avatarUrl) onAvatarSelected;
+  final Function(String pattern, List<Color> colors) onAvatarSelected;
 
   const GeneratedAvatarPicker({Key? key, required this.onAvatarSelected})
     : super(key: key);
@@ -313,11 +367,16 @@ class GeneratedAvatarPicker extends StatelessWidget {
                   AvatarService.generatedAvatarStyles[Random().nextInt(
                     AvatarService.generatedAvatarStyles.length,
                   )];
-              final avatarUrl = AvatarService.generateAvatarUrl(
+              final patternData = AvatarService.generateAvatarPattern(
                 randomStyle['style']!,
                 '$userSeed-${DateTime.now().millisecondsSinceEpoch}',
               );
-              onAvatarSelected(avatarUrl);
+              onAvatarSelected(
+                patternData['pattern'] as String,
+                (patternData['colors'] as List<int>)
+                    .map((c) => Color(c))
+                    .toList(),
+              );
             },
             icon: const Icon(Icons.shuffle),
             label: const Text('Surprise Me!'),
@@ -336,13 +395,19 @@ class GeneratedAvatarPicker extends StatelessWidget {
               itemCount: AvatarService.generatedAvatarStyles.length,
               itemBuilder: (context, index) {
                 final style = AvatarService.generatedAvatarStyles[index];
-                final avatarUrl = AvatarService.generateAvatarUrl(
+                final patternData = AvatarService.generateAvatarPattern(
                   style['style']!,
                   userSeed,
                 );
 
                 return GestureDetector(
-                  onTap: () => onAvatarSelected(avatarUrl),
+                  onTap:
+                      () => onAvatarSelected(
+                        patternData['pattern'] as String,
+                        (patternData['colors'] as List<int>)
+                            .map((c) => Color(c))
+                            .toList(),
+                      ),
                   child: Column(
                     children: [
                       Container(
@@ -353,30 +418,9 @@ class GeneratedAvatarPicker extends StatelessWidget {
                           border: Border.all(color: Colors.grey[300]!),
                         ),
                         child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: avatarUrl,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            placeholder:
-                                (context, url) => const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                            errorWidget:
-                                (context, url, error) => Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.error,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                          child: PatternAvatar(
+                            patternData: patternData,
+                            size: 60,
                           ),
                         ),
                       ),

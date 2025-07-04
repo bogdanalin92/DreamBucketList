@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user_model.dart';
 import '../services/avatar_service.dart';
+import 'pattern_avatar.dart';
 
 class UserAvatar extends StatelessWidget {
   final UserModel user;
@@ -75,25 +77,16 @@ class UserAvatar extends StatelessWidget {
 
       case AvatarType.generated:
         if (user.avatarData != null) {
-          return ClipOval(
-            child: CachedNetworkImage(
-              imageUrl: user.avatarData!,
-              width: radius * 2,
-              height: radius * 2,
-              fit: BoxFit.cover,
-              placeholder:
-                  (context, url) => CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AvatarService.getContrastColor(
-                        _getBackgroundColor(context),
-                      ),
-                    ),
-                  ),
-              errorWidget:
-                  (context, url, error) => _buildInitialsAvatar(context),
-            ),
-          );
+          try {
+            // Parse pattern data from stored string
+            final patternData = _parsePatternData(user.avatarData!);
+            return ClipOval(
+              child: PatternAvatar(patternData: patternData, size: radius * 2),
+            );
+          } catch (e) {
+            // Fallback to initials if parsing fails
+            return _buildInitialsAvatar(context);
+          }
         }
         return _buildInitialsAvatar(context);
 
@@ -142,5 +135,30 @@ class UserAvatar extends StatelessWidget {
         color: textColor,
       ),
     );
+  }
+
+  Map<String, dynamic> _parsePatternData(String avatarData) {
+    try {
+      // Parse JSON string to get pattern data
+      final data = jsonDecode(avatarData) as Map<String, dynamic>;
+
+      // Ensure colors are properly converted
+      final colorsList = data['colors'] as List<dynamic>;
+      final colors = colorsList.map((c) => c as int).toList();
+
+      return {
+        'pattern': data['pattern'] as String,
+        'colors': colors,
+        'seed': data['seed'] as String,
+      };
+    } catch (e) {
+      // Fallback to default pattern if parsing fails
+      print('Failed to parse avatar data: $e');
+      return {
+        'pattern': 'geometric',
+        'colors': [Colors.blue.value],
+        'seed': 'default',
+      };
+    }
   }
 }

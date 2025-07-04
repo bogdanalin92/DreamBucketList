@@ -46,13 +46,36 @@ class AuthProvider extends ChangeNotifier {
     _authService.authStateChanges.listen((User? user) async {
       _user = user;
       if (user != null) {
-        // Fetch or create user model when user signs in
-        final userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
-        _userModel =
-            userDoc.exists
-                ? UserModel.fromMap(userDoc.data()!)
-                : UserModel.fromFirebaseUser(user);
+        try {
+          // Fetch or create user model when user signs in
+          final userDoc =
+              await _firestore.collection('users').doc(user.uid).get();
+
+          if (userDoc.exists) {
+            _userModel = UserModel.fromMap(userDoc.data()!);
+          } else {
+            // Create new user model and save it to Firestore
+            _userModel = UserModel.fromFirebaseUser(user);
+            await _firestore
+                .collection('users')
+                .doc(user.uid)
+                .set(_userModel!.toMap());
+          }
+        } catch (e) {
+          print('Error fetching user document: $e');
+          // Fallback to creating user model from Firebase Auth
+          _userModel = UserModel.fromFirebaseUser(user);
+          try {
+            // Try to save the user model to Firestore
+            await _firestore
+                .collection('users')
+                .doc(user.uid)
+                .set(_userModel!.toMap());
+          } catch (saveError) {
+            print('Error saving user document: $saveError');
+            // Continue with the user model even if save fails
+          }
+        }
 
         if (!user.isAnonymous) {
           await _checkAdminStatus();

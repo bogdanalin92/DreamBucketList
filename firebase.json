@@ -1,1 +1,43 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"bucketlist-dreams","appId":"1:173836080840:android:26822f7b54e4f4853237fd","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"bucketlist-dreams","appId":"1:173836080840:ios:ae3003fd2070fcae3237fd","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"bucketlist-dreams","appId":"1:173836080840:ios:ae3003fd2070fcae3237fd","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"bucketlist-dreams","configurations":{"android":"1:173836080840:android:26822f7b54e4f4853237fd","ios":"1:173836080840:ios:ae3003fd2070fcae3237fd","macos":"1:173836080840:ios:ae3003fd2070fcae3237fd"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "bucketlist-dreams",
+          "appId": "1:173836080840:android:26822f7b54e4f4853237fd",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "bucketlist-dreams",
+          "appId": "1:173836080840:ios:ae3003fd2070fcae3237fd",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "bucketlist-dreams",
+          "appId": "1:173836080840:ios:ae3003fd2070fcae3237fd",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "bucketlist-dreams",
+          "configurations": {
+            "android": "1:173836080840:android:26822f7b54e4f4853237fd",
+            "ios": "1:173836080840:ios:ae3003fd2070fcae3237fd",
+            "macos": "1:173836080840:ios:ae3003fd2070fcae3237fd"
+          }
+        }
+      }
+    }
+  }
+}

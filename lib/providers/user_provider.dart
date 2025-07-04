@@ -16,7 +16,17 @@ class UserProvider extends ChangeNotifier {
   /// Initialize user data from Firestore
   Future<void> initializeUser() async {
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      _userModel = null;
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
+
+    // Don't reload if we already have the user data for this user
+    if (_userModel != null && _userModel!.uid == user.uid) {
+      return;
+    }
 
     _isLoading = true;
     notifyListeners();
@@ -35,6 +45,13 @@ class UserProvider extends ChangeNotifier {
       debugPrint('Error initializing user: $e');
       // Fallback to Firebase Auth user
       _userModel = UserModel.fromFirebaseUser(user);
+
+      // Try to save the user model to Firestore
+      try {
+        await saveUserModel(_userModel!);
+      } catch (saveError) {
+        debugPrint('Error saving fallback user model: $saveError');
+      }
     }
 
     _isLoading = false;
@@ -53,7 +70,10 @@ class UserProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error saving user model: $e');
-      throw e;
+      // Still update the local model even if Firestore save fails
+      _userModel = userModel;
+      notifyListeners();
+      rethrow;
     }
   }
 
@@ -63,7 +83,13 @@ class UserProvider extends ChangeNotifier {
     required AvatarType avatarType,
     int? backgroundColor,
   }) async {
-    if (_userModel == null) return;
+    if (_userModel == null) {
+      // Try to initialize user first
+      await initializeUser();
+      if (_userModel == null) {
+        throw Exception('Unable to load user data');
+      }
+    }
 
     final updatedUser = _userModel!.copyWith(
       avatarData: avatarData,
@@ -76,7 +102,13 @@ class UserProvider extends ChangeNotifier {
 
   /// Update user display name
   Future<void> updateDisplayName(String displayName) async {
-    if (_userModel == null) return;
+    if (_userModel == null) {
+      // Try to initialize user first
+      await initializeUser();
+      if (_userModel == null) {
+        throw Exception('Unable to load user data');
+      }
+    }
 
     // Update Firebase Auth profile
     await _auth.currentUser?.updateDisplayName(displayName);
