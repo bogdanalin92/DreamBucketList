@@ -42,6 +42,7 @@ class PatternAvatar extends StatelessWidget {
                   : [colors[0], colors[0]],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          stops: const [0.0, 1.0], // Ensure full gradient coverage
         );
       case 'abstract':
         return RadialGradient(
@@ -78,23 +79,11 @@ class PatternPainter extends CustomPainter {
       case 'geometric':
         _paintGeometric(canvas, size, paint, random);
         break;
+      case 'gradient':
+        _paintGradient(canvas, size, paint, random);
+        break;
       case 'abstract':
         _paintAbstract(canvas, size, paint, random);
-        break;
-      case 'shapes':
-        _paintShapes(canvas, size, paint, random);
-        break;
-      case 'patterns':
-        _paintPatterns(canvas, size, paint, random);
-        break;
-      case 'modern':
-        _paintModern(canvas, size, paint, random);
-        break;
-      case 'minimal':
-        _paintMinimal(canvas, size, paint, random);
-        break;
-      case 'artistic':
-        _paintArtistic(canvas, size, paint, random);
         break;
       default:
         _paintGeometric(canvas, size, paint, random);
@@ -102,13 +91,10 @@ class PatternPainter extends CustomPainter {
   }
 
   void _paintGeometric(Canvas canvas, Size size, Paint paint, Random random) {
-    // Draw geometric triangles
-    paint.color =
-        colors.length > 1
-            ? colors[1].withOpacity(0.7)
-            : colors[0].withOpacity(0.7);
-
+    // Draw geometric triangles with multiple colors
     for (int i = 0; i < 3; i++) {
+      paint.color = colors[i % colors.length].withOpacity(0.7);
+
       final path = Path();
       final centerX = size.width * (0.3 + random.nextDouble() * 0.4);
       final centerY = size.height * (0.3 + random.nextDouble() * 0.4);
@@ -123,6 +109,36 @@ class PatternPainter extends CustomPainter {
     }
   }
 
+  void _paintGradient(Canvas canvas, Size size, Paint paint, Random random) {
+    // For gradient pattern, we want minimal foreground painting
+    // to let the LinearGradient background show through clearly
+    // Add very subtle texture or let it be pure gradient
+
+    if (colors.length >= 2) {
+      // Add very subtle geometric accents that enhance rather than compete with the gradient
+      paint.color = colors[0].withOpacity(0.15);
+
+      // Draw subtle diamond shape in the center
+      final centerX = size.width * 0.5;
+      final centerY = size.height * 0.5;
+      final diamondSize = size.width * 0.2;
+
+      final path = Path();
+      path.moveTo(centerX, centerY - diamondSize * 0.5);
+      path.lineTo(centerX + diamondSize * 0.5, centerY);
+      path.lineTo(centerX, centerY + diamondSize * 0.5);
+      path.lineTo(centerX - diamondSize * 0.5, centerY);
+      path.close();
+
+      canvas.drawPath(path, paint);
+
+      // Add a second subtle accent with the second color
+      paint.color = colors[1].withOpacity(0.1);
+      canvas.drawCircle(Offset(centerX, centerY), diamondSize * 0.3, paint);
+    }
+    // The main visual effect comes from the LinearGradient in the Container's decoration
+  }
+
   void _paintAbstract(Canvas canvas, Size size, Paint paint, Random random) {
     // Draw abstract circles
     for (int i = 0; i < colors.length && i < 4; i++) {
@@ -133,114 +149,6 @@ class PatternPainter extends CustomPainter {
 
       canvas.drawCircle(Offset(centerX, centerY), radius, paint);
     }
-  }
-
-  void _paintShapes(Canvas canvas, Size size, Paint paint, Random random) {
-    // Draw various shapes
-    paint.color =
-        colors.length > 1
-            ? colors[1].withOpacity(0.8)
-            : colors[0].withOpacity(0.8);
-
-    // Rectangle
-    canvas.drawRect(
-      Rect.fromLTWH(
-        size.width * 0.2,
-        size.height * 0.2,
-        size.width * 0.3,
-        size.height * 0.3,
-      ),
-      paint,
-    );
-
-    // Circle
-    canvas.drawCircle(
-      Offset(size.width * 0.7, size.height * 0.7),
-      size.width * 0.15,
-      paint,
-    );
-  }
-
-  void _paintPatterns(Canvas canvas, Size size, Paint paint, Random random) {
-    // Draw dot pattern
-    paint.color =
-        colors.length > 1
-            ? colors[1].withOpacity(0.7)
-            : colors[0].withOpacity(0.7);
-
-    for (
-      double x = size.width * 0.2;
-      x < size.width * 0.8;
-      x += size.width * 0.15
-    ) {
-      for (
-        double y = size.height * 0.2;
-        y < size.height * 0.8;
-        y += size.height * 0.15
-      ) {
-        canvas.drawCircle(Offset(x, y), size.width * 0.03, paint);
-      }
-    }
-  }
-
-  void _paintModern(Canvas canvas, Size size, Paint paint, Random random) {
-    // Draw modern lines
-    paint.color =
-        colors.length > 1
-            ? colors[1].withOpacity(0.8)
-            : colors[0].withOpacity(0.8);
-    paint.strokeWidth = size.width * 0.05;
-    paint.style = PaintingStyle.stroke;
-
-    canvas.drawLine(
-      Offset(size.width * 0.2, size.height * 0.3),
-      Offset(size.width * 0.8, size.height * 0.7),
-      paint,
-    );
-
-    canvas.drawLine(
-      Offset(size.width * 0.2, size.height * 0.7),
-      Offset(size.width * 0.8, size.height * 0.3),
-      paint,
-    );
-  }
-
-  void _paintMinimal(Canvas canvas, Size size, Paint paint, Random random) {
-    // Draw single shape
-    paint.color = colors[0].withOpacity(0.9);
-
-    canvas.drawCircle(
-      Offset(size.width * 0.5, size.height * 0.5),
-      size.width * 0.2,
-      paint,
-    );
-  }
-
-  void _paintArtistic(Canvas canvas, Size size, Paint paint, Random random) {
-    // Draw artistic curves
-    paint.color =
-        colors.length > 1
-            ? colors[1].withOpacity(0.7)
-            : colors[0].withOpacity(0.7);
-    paint.strokeWidth = size.width * 0.03;
-    paint.style = PaintingStyle.stroke;
-
-    final path = Path();
-    path.moveTo(size.width * 0.2, size.height * 0.5);
-    path.quadraticBezierTo(
-      size.width * 0.5,
-      size.height * 0.2,
-      size.width * 0.8,
-      size.height * 0.5,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.5,
-      size.height * 0.8,
-      size.width * 0.2,
-      size.height * 0.5,
-    );
-
-    canvas.drawPath(path, paint);
   }
 
   @override

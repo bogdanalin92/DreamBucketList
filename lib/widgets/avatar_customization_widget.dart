@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -27,49 +26,55 @@ class AvatarCustomizationWidget extends StatefulWidget {
 class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Current avatar display
-        UserAvatar(user: widget.user, radius: 60),
-        const SizedBox(height: 24),
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        final currentUser = userProvider.userModel ?? widget.user;
 
-        // Customization options
-        Text(
-          'Choose Your Avatar Style',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-
-        // Option buttons
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildOptionButton(
-              context,
-              icon: Icons.face,
-              label: 'Emoji',
-              onTap: () => _showEmojiPicker(context),
+            // Current avatar display - uses current user data from provider
+            UserAvatar(user: currentUser, radius: 60),
+            const SizedBox(height: 24),
+
+            // Customization options
+            Text(
+              'Choose Your Avatar Style',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
-            _buildOptionButton(
-              context,
-              icon: Icons.auto_awesome,
-              label: 'Generated',
-              onTap: () => _showGeneratedAvatars(context),
-            ),
-            _buildOptionButton(
-              context,
-              icon: Icons.text_fields,
-              label: 'Initials',
-              onTap: () => _showInitialsCustomizer(context),
+            const SizedBox(height: 16),
+
+            // Option buttons
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildOptionButton(
+                  context,
+                  icon: Icons.face,
+                  label: 'Emoji',
+                  onTap: () => _showEmojiPicker(context),
+                ),
+                _buildOptionButton(
+                  context,
+                  icon: Icons.auto_awesome,
+                  label: 'Generated',
+                  onTap: () => _showGeneratedAvatars(context),
+                ),
+                _buildOptionButton(
+                  context,
+                  icon: Icons.text_fields,
+                  label: 'Initials',
+                  onTap: () => _showInitialsCustomizer(context),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -118,7 +123,7 @@ class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
                 await userProvider.updateAvatar(
                   avatarData: emoji,
                   avatarType: AvatarType.emoji,
-                  backgroundColor: backgroundColor.value,
+                  backgroundColor: backgroundColor.toARGB32(),
                 );
                 widget.onAvatarChanged();
                 Navigator.pop(context);
@@ -151,13 +156,14 @@ class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
                 // Create pattern data
                 final patternData = {
                   'pattern': pattern,
-                  'colors': colors.map((c) => c.value).toList(),
+                  'colors': colors.map((c) => c.toARGB32()).toList(),
                   'seed': widget.user.uid,
                 };
 
                 await userProvider.updateAvatar(
                   avatarData: jsonEncode(patternData),
                   avatarType: AvatarType.generated,
+                  // For generated avatars, color data is encoded in the pattern itself, so no separate background color is needed.
                   backgroundColor: null,
                 );
                 widget.onAvatarChanged();
@@ -190,7 +196,7 @@ class _AvatarCustomizationWidgetState extends State<AvatarCustomizationWidget> {
                 await userProvider.updateAvatar(
                   avatarData: null,
                   avatarType: AvatarType.initials,
-                  backgroundColor: backgroundColor.value,
+                  backgroundColor: backgroundColor.toARGB32(),
                 );
                 widget.onAvatarChanged();
                 Navigator.pop(context);
@@ -326,11 +332,19 @@ class EmojiAvatarPicker extends StatelessWidget {
   }
 }
 
-class GeneratedAvatarPicker extends StatelessWidget {
+class GeneratedAvatarPicker extends StatefulWidget {
   final Function(String pattern, List<Color> colors) onAvatarSelected;
 
   const GeneratedAvatarPicker({Key? key, required this.onAvatarSelected})
     : super(key: key);
+
+  @override
+  State<GeneratedAvatarPicker> createState() => _GeneratedAvatarPickerState();
+}
+
+class _GeneratedAvatarPickerState extends State<GeneratedAvatarPicker> {
+  String? selectedPattern;
+  List<Color> selectedColors = [];
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +352,7 @@ class GeneratedAvatarPicker extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      height: MediaQuery.of(context).size.height * 0.6,
+      height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
           // Handle bar
@@ -353,91 +367,288 @@ class GeneratedAvatarPicker extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            'Choose Generated Avatar',
+            selectedPattern == null
+                ? 'Choose Avatar Style'
+                : 'Customize Colors',
             style: Theme.of(
               context,
             ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
-          // Random selection button
-          ElevatedButton.icon(
-            onPressed: () {
-              final randomStyle =
-                  AvatarService.generatedAvatarStyles[Random().nextInt(
-                    AvatarService.generatedAvatarStyles.length,
-                  )];
-              final patternData = AvatarService.generateAvatarPattern(
-                randomStyle['style']!,
-                '$userSeed-${DateTime.now().millisecondsSinceEpoch}',
-              );
-              onAvatarSelected(
-                patternData['pattern'] as String,
-                (patternData['colors'] as List<int>)
-                    .map((c) => Color(c))
-                    .toList(),
-              );
-            },
-            icon: const Icon(Icons.shuffle),
-            label: const Text('Surprise Me!'),
-          ),
-          const SizedBox(height: 16),
-
-          // Avatar styles grid
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: AvatarService.generatedAvatarStyles.length,
-              itemBuilder: (context, index) {
-                final style = AvatarService.generatedAvatarStyles[index];
+          if (selectedPattern == null) ...[
+            // Random selection button
+            ElevatedButton.icon(
+              onPressed: () {
+                final randomStyle =
+                    AvatarService.generatedAvatarStyles[Random().nextInt(
+                      AvatarService.generatedAvatarStyles.length,
+                    )];
                 final patternData = AvatarService.generateAvatarPattern(
-                  style['style']!,
-                  userSeed,
+                  randomStyle['style']!,
+                  '$userSeed-${DateTime.now().millisecondsSinceEpoch}',
                 );
+                widget.onAvatarSelected(
+                  patternData['pattern'] as String,
+                  (patternData['colors'] as List<int>)
+                      .map((c) => Color(c))
+                      .toList(),
+                );
+              },
+              icon: const Icon(Icons.shuffle),
+              label: const Text('Surprise Me!'),
+            ),
+            const SizedBox(height: 16),
 
-                return GestureDetector(
-                  onTap:
-                      () => onAvatarSelected(
-                        patternData['pattern'] as String,
-                        (patternData['colors'] as List<int>)
-                            .map((c) => Color(c))
-                            .toList(),
-                      ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: ClipOval(
-                          child: PatternAvatar(
-                            patternData: patternData,
-                            size: 60,
+            // Avatar styles grid
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.8,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: AvatarService.generatedAvatarStyles.length,
+                itemBuilder: (context, index) {
+                  final style = AvatarService.generatedAvatarStyles[index];
+                  final patternData = AvatarService.generateAvatarPattern(
+                    style['style']!,
+                    userSeed,
+                  );
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedPattern = style['style']!;
+                        selectedColors =
+                            (patternData['colors'] as List<int>)
+                                .map((c) => Color(c))
+                                .toList();
+                      });
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: ClipOval(
+                            child: PatternAvatar(
+                              patternData: patternData,
+                              size: 60,
+                            ),
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          style['name']!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ] else ...[
+            // Color customization section
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  // Preview of selected pattern
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey[400]!, width: 2),
+                    ),
+                    child: ClipOval(
+                      child: PatternAvatar(
+                        patternData: {
+                          'pattern': selectedPattern!,
+                          'colors':
+                              selectedColors.map((c) => c.toARGB32()).toList(),
+                          'seed': userSeed,
+                        },
+                        size: 80,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        style['name']!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tap colors to customize:',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap any color circle below to change it',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Color selection grid
+            Expanded(
+              child: Column(
+                children: [
+                  // Current colors display
+                  Wrap(
+                    spacing: 8,
+                    children:
+                        selectedColors.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final color = entry.value;
+                          return GestureDetector(
+                            onTap: () => _showColorPicker(context, index),
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.grey[400]!,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.edit,
+                                color: AvatarService.getContrastColor(color),
+                                size: 20,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Regenerate colors button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        selectedColors =
+                            AvatarService.regenerateColorsForPattern(
+                              selectedPattern!,
+                            );
+                      });
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Regenerate Colors'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Action buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedPattern = null;
+                              selectedColors = [];
+                            });
+                          },
+                          child: const Text('Back'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            widget.onAvatarSelected(
+                              selectedPattern!,
+                              selectedColors,
+                            );
+                          },
+                          child: const Text('Use Avatar'),
+                        ),
                       ),
                     ],
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _showColorPicker(BuildContext context, int colorIndex) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Choose Color ${colorIndex + 1}'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 5,
+                  childAspectRatio: 1,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: AvatarService.avatarColors.length,
+                itemBuilder: (context, index) {
+                  final color = AvatarService.avatarColors[index];
+                  final isSelected = selectedColors[colorIndex] == color;
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedColors[colorIndex] = color;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? Colors.black : Colors.grey[300]!,
+                          width: isSelected ? 3 : 1,
+                        ),
+                      ),
+                      child:
+                          isSelected
+                              ? Icon(
+                                Icons.check,
+                                color: AvatarService.getContrastColor(color),
+                                size: 20,
+                              )
+                              : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
     );
   }
 }

@@ -84,11 +84,14 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
             );
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Card(
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -109,46 +112,6 @@ class _AvatarCustomizationScreenState extends State<AvatarCustomizationScreen> {
                           ),
                         );
                       },
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Tips card
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.lightbulb_outline,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Avatar Tips',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '• Emoji avatars are fun and personal\n'
-                          '• Generated avatars are unique and consistent\n'
-                          '• Initials work great with your name\n'
-                          '• Your avatar syncs across all your devices',
-                          style: TextStyle(height: 1.5),
-                        ),
-                      ],
                     ),
                   ),
                 ),

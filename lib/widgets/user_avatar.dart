@@ -146,17 +146,18 @@ class UserAvatar extends StatelessWidget {
       final colorsList = data['colors'] as List<dynamic>;
       final colors = colorsList.map((c) => c as int).toList();
 
-      return {
+      final result = {
         'pattern': data['pattern'] as String,
         'colors': colors,
         'seed': data['seed'] as String,
       };
+      return result;
     } catch (e) {
+      print('ERROR: Failed to parse pattern data: $e');
       // Fallback to default pattern if parsing fails
-      print('Failed to parse avatar data: $e');
       return {
         'pattern': 'geometric',
-        'colors': [Colors.blue.value],
+        'colors': [Colors.blue.toARGB32()],
         'seed': 'default',
       };
     }

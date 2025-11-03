@@ -132,11 +132,6 @@ class AvatarService {
     {'name': 'Geometric', 'style': 'geometric'},
     {'name': 'Abstract', 'style': 'abstract'},
     {'name': 'Gradient', 'style': 'gradient'},
-    {'name': 'Shapes', 'style': 'shapes'},
-    {'name': 'Patterns', 'style': 'patterns'},
-    {'name': 'Modern', 'style': 'modern'},
-    {'name': 'Minimal', 'style': 'minimal'},
-    {'name': 'Artistic', 'style': 'artistic'},
   ];
 
   /// Save emoji avatar to Firestore
@@ -150,7 +145,7 @@ class AvatarService {
     await _firestore.collection('users').doc(user.uid).update({
       'avatarData': emoji,
       'avatarType': AvatarType.emoji.name,
-      'backgroundColor': backgroundColor.value,
+      'backgroundColor': backgroundColor.toARGB32(),
       'lastUpdated': FieldValue.serverTimestamp(),
     });
   }
@@ -166,7 +161,7 @@ class AvatarService {
     // Store pattern data as JSON string
     final patternData = {
       'pattern': pattern,
-      'colors': colors.map((c) => c.value).toList(),
+      'colors': colors.map((c) => c.toARGB32()).toList(),
       'seed': user.uid,
     };
 
@@ -218,7 +213,12 @@ class AvatarService {
         break;
       case 'gradient':
         final baseColor = avatarColors[random.nextInt(avatarColors.length)];
-        colors = [baseColor, _lightenColor(baseColor, 0.3)];
+        final secondColor = avatarColors[random.nextInt(avatarColors.length)];
+        // Ensure we have two distinct colors for a better gradient effect
+        colors =
+            baseColor != secondColor
+                ? [baseColor, secondColor]
+                : [baseColor, _lightenColor(baseColor, 0.4)];
         break;
       case 'abstract':
         colors = List.generate(3, (_) => _generateRandomColor(random));
@@ -229,7 +229,7 @@ class AvatarService {
 
     return {
       'pattern': style,
-      'colors': colors.map((c) => c.value).toList(),
+      'colors': colors.map((c) => c.toARGB32()).toList(),
       'seed': seed,
     };
   }
@@ -272,5 +272,33 @@ class AvatarService {
         255;
 
     return luminance > 0.5 ? Colors.black : Colors.white;
+  }
+
+  /// Regenerate colors for a specific pattern style
+  static List<Color> regenerateColorsForPattern(String style) {
+    final random = Random(DateTime.now().millisecondsSinceEpoch);
+
+    List<Color> colors;
+    switch (style) {
+      case 'geometric':
+        colors = [_generateRandomColor(random), _generateRandomColor(random)];
+        break;
+      case 'gradient':
+        final baseColor = avatarColors[random.nextInt(avatarColors.length)];
+        final secondColor = avatarColors[random.nextInt(avatarColors.length)];
+        // Ensure we have two distinct colors for a better gradient effect
+        colors =
+            baseColor != secondColor
+                ? [baseColor, secondColor]
+                : [baseColor, _lightenColor(baseColor, 0.4)];
+        break;
+      case 'abstract':
+        colors = List.generate(3, (_) => _generateRandomColor(random));
+        break;
+      default:
+        colors = [avatarColors[random.nextInt(avatarColors.length)]];
+    }
+
+    return colors;
   }
 }
